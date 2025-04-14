@@ -10,17 +10,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: katalonstudio/katalon:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Katalon Studio
+        run: |
+          # Install Katalon Studio on the runner
+          curl -O https://download.katalon.com/Katalon_Studio_Engine_9.7.5-linux.tar.gz
+          tar -xvzf Katalon_Studio_Engine_9.7.5-linux.tar.gz
+          export KATALON_HOME="${PWD}/Katalon_Studio_Engine_9.7.5"
+          export PATH=$KATALON_HOME:$PATH
+
       - name: Run Katalon tests
         run: |
-          katalonc.sh \
-            -projectPath=${{ github.workspace }} \
+          katalonc.sh -projectPath=${{ github.workspace }} \
             -retry=0 \
             -testSuitePath="Test Suites/ts01" \
             -browserType="Chrome" \
