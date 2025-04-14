@@ -25,6 +25,11 @@ jobs:
       run: |
         sudo apt-get -y install xvfb
         sudo /usr/bin/Xvfb :0 -screen 0 1280x1024x24 &
+
+    - name: Clean up Chrome temp data (optional)
+      run: |
+        rm -rf /tmp/chrome-data-${{ github.run_id }}
+
     - name: Katalon Studio Github Action
       uses: katalon-studio/katalon-studio-github-action@v4.0
       with:
