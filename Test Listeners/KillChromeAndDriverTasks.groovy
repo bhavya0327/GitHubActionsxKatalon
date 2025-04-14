@@ -27,7 +27,7 @@ class KillChromeAndDriverTasks {
 	 * Executes before every test case starts.
 	 * @param testCaseContext related information of the executed test case.
 	 */
-	@BeforeTestSuite
+	@BeforeTestCase
 	def sampleBeforeTestCase(TestCaseContext testCaseContext) {
 		Runtime.getRuntime().exec("pkill -f chrome");
 		Runtime.getRuntime().exec("pkill -f chromedriver");
