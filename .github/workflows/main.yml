@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
@@ -35,4 +35,4 @@ jobs:
       with:
           version: '9.7.5'
           projectPath: '${{ github.workspace }}'
-          args: '-retry=0 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true'
+          args: '-retry=0 -testSuitePath="Test Suites/ts01" -browserType="Chrome (headless)" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true'
