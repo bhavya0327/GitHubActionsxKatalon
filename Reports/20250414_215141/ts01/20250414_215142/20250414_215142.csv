@@ -1,0 +1,12 @@
+Suite/Test/Step Name,Browser,Description,Tag,Start time,End time,Duration,Status
+ts01,Chrome 135.0.0.0,,,14-04-2025 21:51:50,14-04-2025 21:52:04,13.117s,PASSED
+,,,,,,,
+Test Cases/tc01,Chrome 135.0.0.0,,,14-04-2025 21:51:51,14-04-2025 21:52:04,13.024s,PASSED
+Start listener action : sampleBeforeTestCase,Chrome 135.0.0.0,,,14-04-2025 21:51:51,14-04-2025 21:51:51,0.011s,PASSED
+"openBrowser("""")",Chrome 135.0.0.0,,,14-04-2025 21:51:51,14-04-2025 21:51:52,1.492s,PASSED
+"navigateToUrl(""http://demoaut.katalon.com/"")",Chrome 135.0.0.0,,,14-04-2025 21:51:52,14-04-2025 21:52:01,8.569s,PASSED
+"click(findTestObject(""Object Repository/Page_CURA Healthcare Service/a_Make Appointment""))",Chrome 135.0.0.0,,,14-04-2025 21:52:01,14-04-2025 21:52:01,0.747s,PASSED
+"setText(findTestObject(""Object Repository/Page_CURA Healthcare Service/input_Username_username""), ""John Doe"")",Chrome 135.0.0.0,,,14-04-2025 21:52:01,14-04-2025 21:52:02,0.809s,PASSED
+"setEncryptedText(findTestObject(""Object Repository/Page_CURA Healthcare Service/input_Password_password""), ""g3/DOGG74jC3Flrr3yH+3D/yKbOqqUNM"")",Chrome 135.0.0.0,,,14-04-2025 21:52:02,14-04-2025 21:52:03,0.279s,PASSED
+"click(findTestObject(""Object Repository/Page_CURA Healthcare Service/button_Login""))",Chrome 135.0.0.0,,,14-04-2025 21:52:03,14-04-2025 21:52:03,0.911s,PASSED
+closeBrowser(),Chrome 135.0.0.0,,,14-04-2025 21:52:03,14-04-2025 21:52:04,0.097s,PASSED

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="ts01" time="13.117" tests="1" failures="0" errors="0">
+   <testsuite name="ts01" tests="1" failures="0" errors="0" time="13.117" skipped="0" timestamp="14-04-2025T21:51:50" hostname="bhavyansh-katalon - localhost" id="Test Suites/ts01">
+      <properties>
+         <property name="deviceName" value=""/>
+         <property name="devicePlatform"/>
+         <property name="logFolder" value="/Users/bhavyansh-katalon/git/GitHubActionsxKatalon/Reports/20250414_215141/ts01/20250414_215142"/>
+         <property name="logFiles" value="/Users/bhavyansh-katalon/git/GitHubActionsxKatalon/Reports/20250414_215141/ts01/20250414_215142/execution0.log"/>
+         <property name="attachments" value=""/>
+         <property name="hostName" value="bhavyansh-katalon - localhost"/>
+         <property name="os" value="Mac OS X 64bit"/>
+         <property name="katalonVersion" value="9.7.5.223"/>
+         <property name="browser" value="Chrome 135.0.0.0"/>
+         <property name="hostAddress" value="127.0.0.1"/>
+         <property name="sessionId" value="9c5d0181f7d606c663b8a52fbf3bc771"/>
+         <property name="seleniumVersion" value="3.141.59"/>
+         <property name="proxyInformation" value="ProxyInformation { proxyOption=NO_PROXY, proxyServerType=HTTP, username=, password=********, proxyServerAddress=, proxyServerPort=0, executionList=&quot;&quot;, isApplyToDesiredCapabilities=true }"/>
+         <property name="platform" value="Mac OS X"/>
+      </properties>
+      <testcase name="Test Cases/tc01" time="13.024" classname="Test Cases/tc01" status="PASSED">
+         <system-out><![CDATA[14-04-2025T21:51:51 - [TEST_CASE][PASSED] - Test Cases/tc01: Test Cases/tc01
+
+14-04-2025T21:51:51 - [TEST_STEP][PASSED] - Start listener action : sampleBeforeTestCase: null
+
+14-04-2025T21:51:51 - [TEST_STEP][PASSED] - openBrowser(""): Browser is opened with url: ''
+
+14-04-2025T21:51:51 - [MESSAGE][INFO] - Starting 'Chrome' driver
+
+14-04-2025T21:51:51 - [MESSAGE][INFO] - User set preference: ['args', '[--edge-skip-compat-layer-relaunch]']
+
+14-04-2025T21:51:51 - [MESSAGE][INFO] - Action delay is set to 0 milliseconds
+
+14-04-2025T21:51:52 - [MESSAGE][PASSED] - Browser is opened with url: ''
+
+14-04-2025T21:51:52 - [TEST_STEP][PASSED] - navigateToUrl("http://demoaut.katalon.com/"): Navigate to 'http://demoaut.katalon.com/' successfully
+
+14-04-2025T21:52:01 - [MESSAGE][PASSED] - Navigate to 'http://demoaut.katalon.com/' successfully
+
+14-04-2025T21:52:01 - [TEST_STEP][PASSED] - click(findTestObject("Object Repository/Page_CURA Healthcare Service/a_Make Appointment")): Object: 'Object Repository/Page_CURA Healthcare Service/a_Make Appointment' is clicked on
+
+14-04-2025T21:52:01 - [MESSAGE][PASSED] - Object: 'Object Repository/Page_CURA Healthcare Service/a_Make Appointment' is clicked on
+
+14-04-2025T21:52:01 - [TEST_STEP][PASSED] - setText(findTestObject("Object Repository/Page_CURA Healthcare Service/input_Username_username"), "John Doe"): Text 'John Doe' is set on object 'Object Repository/Page_CURA Healthcare Service/input_Username_username'
+
+14-04-2025T21:52:02 - [MESSAGE][PASSED] - Text 'John Doe' is set on object 'Object Repository/Page_CURA Healthcare Service/input_Username_username'
+
+14-04-2025T21:52:02 - [TEST_STEP][PASSED] - setEncryptedText(findTestObject("Object Repository/Page_CURA Healthcare Service/input_Password_password"), "g3/DOGG74jC3Flrr3yH+3D/yKbOqqUNM"): Text ****** has been set on object 'Object Repository/Page_CURA Healthcare Service/input_Password_password'
+
+14-04-2025T21:52:03 - [MESSAGE][PASSED] - Text ****** has been set on object 'Object Repository/Page_CURA Healthcare Service/input_Password_password'
+
+14-04-2025T21:52:03 - [TEST_STEP][PASSED] - click(findTestObject("Object Repository/Page_CURA Healthcare Service/button_Login")): Object: 'Object Repository/Page_CURA Healthcare Service/button_Login' is clicked on
+
+14-04-2025T21:52:03 - [MESSAGE][PASSED] - Object: 'Object Repository/Page_CURA Healthcare Service/button_Login' is clicked on
+
+14-04-2025T21:52:03 - [TEST_STEP][PASSED] - closeBrowser(): Browser is closed
+
+14-04-2025T21:52:04 - [MESSAGE][PASSED] - Browser is closed]]></system-out>
+         <system-err><![CDATA[]]></system-err>
+      </testcase>
+      <system-out><![CDATA[14-04-2025T21:51:50 - [TEST_SUITE][PASSED] - ts01: Test Cases/tc01]]></system-out>
+      <system-err><![CDATA[]]></system-err>
+   </testsuite>
+</testsuites>
