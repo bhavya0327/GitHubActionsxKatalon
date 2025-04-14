@@ -35,6 +35,6 @@ jobs:
     - name: Katalon Studio Github Action
       uses: katalon-studio/katalon-studio-github-action@v4.0
       with:
-          version: '9.7.5'
+          # version: '9.7.5'
           projectPath: '${{ github.workspace }}'
-          args: '-retry=0 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true'
+          args: 'docker run -t --rm -v "$(pwd)":/tmp/project katalonstudio/katalon:latest katalonc.sh -projectPath=/tmp/project -retry=0 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true'
