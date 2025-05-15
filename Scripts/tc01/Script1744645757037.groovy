@@ -21,6 +21,12 @@ WebUI.openBrowser('')
 
 WebUI.navigateToUrl('http://demoaut.katalon.com/')
 
+def h = WebUI.getViewportHeight()
+def w = WebUI.getViewportWidth()
+
+println(h)
+println(w)
+
 WebUI.click(findTestObject('Object Repository/Page_CURA Healthcare Service/a_Make Appointment'))
 
 WebUI.setText(findTestObject('Object Repository/Page_CURA Healthcare Service/input_Username_username'), 'John Doe')
