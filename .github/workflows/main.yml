@@ -6,15 +6,23 @@ on:
   pull_request:
     branches: [ master ]
   workflow_dispatch:
-
+ 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+ build:
+  runs-on: windows-latest
+  steps:
+  - name: Checkout
+    uses: actions/checkout@v4
     
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run Katalon tests
-        run: |
-          docker run -t --rm -v "$(pwd)":/tmp/project katalonstudio/katalon:latest katalonc.sh -projectPath=/tmp/project -retry=0 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true
+  - name: Download Katalon Runtime Engine
+    shell: powershell
+    run: |
+      # Downloads KRE directly
+      Invoke-WebRequest -Uri "https://download.katalon.com/10.4.3/Katalon_Studio_Engine_Windows_64-10.4.3.zip" -OutFile "KRE.zip"
+      Expand-Archive -Path "KRE.zip" -DestinationPath "Katalon_Engine"
+      
+  - name: Run Katalon Tests via CLI
+    shell: powershell
+    run: |
+      cd Katalon_Engine\Katalon_Studio_Engine_Windows_64-10.4.3
+      .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true
