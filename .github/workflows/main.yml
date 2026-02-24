@@ -20,14 +20,17 @@ jobs:
         # Disable the progress bar to speed up the download significantly
         $ProgressPreference = 'SilentlyContinue'
         
-        # Download KRE directly
-        Invoke-WebRequest -Uri "https://download.katalon.com/10.4.3/Katalon_Studio_Engine_Windows_64-10.4.3.zip" -OutFile "KRE.zip"
+        # Download KRE directly to the root C: drive
+        Invoke-WebRequest -Uri "https://download.katalon.com/10.4.3/Katalon_Studio_Engine_Windows_64-10.4.3.zip" -OutFile "C:\KRE.zip"
         
-        # Use 7-Zip (pre-installed on windows runners) to extract it much faster than Expand-Archive
-        7z x KRE.zip -o"Katalon_Engine" -y
+        # Extract to a very short path on the C: drive to avoid Windows length limits
+        7z x C:\KRE.zip -o"C:\KRE" -y
         
     - name: Run Katalon Tests via CLI
       shell: powershell
       run: |
-        cd Katalon_Engine\Katalon_Studio_Engine_Windows_64-10.4.3
+        # Navigate to the new short path
+        cd C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3
+        
+        # Run Katalon. Notice we kept projectPath pointing to the github workspace where your code is
         .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true
