@@ -32,9 +32,17 @@ jobs:
         # Extract it
         7z x C:\chromedriver.zip -o"C:\temp_driver" -y
         
+        # Define destination paths
+        $driverPath32 = "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win32"
+        $driverPath64 = "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win64"
+        
+        # Ensure the destination folders actually exist before copying
+        New-Item -ItemType Directory -Force -Path $driverPath32
+        New-Item -ItemType Directory -Force -Path $driverPath64
+        
         # Overwrite Katalon's bundled driver with the new one
-        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win32\chromedriver.exe" -Force
-        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win64\chromedriver.exe" -Force
+        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "$driverPath32\chromedriver.exe" -Force
+        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "$driverPath64\chromedriver.exe" -Force
 
     - name: Run Katalon Tests via CLI
       shell: powershell
