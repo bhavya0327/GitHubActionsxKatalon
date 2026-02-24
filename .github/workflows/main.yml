@@ -17,20 +17,29 @@ jobs:
     - name: Download Katalon Runtime Engine
       shell: powershell
       run: |
-        # Disable the progress bar to speed up the download significantly
         $ProgressPreference = 'SilentlyContinue'
-        
-        # Download KRE directly to the root C: drive
         Invoke-WebRequest -Uri "https://download.katalon.com/10.4.3/Katalon_Studio_Engine_Windows_64-10.4.3.zip" -OutFile "C:\KRE.zip"
-        
-        # Extract to a very short path on the C: drive to avoid Windows length limits
         7z x C:\KRE.zip -o"C:\KRE" -y
         
+    - name: Download matching ChromeDriver
+      shell: powershell
+      run: |
+        $ProgressPreference = 'SilentlyContinue'
+        
+        # Download the exact v145 ChromeDriver required by the windows-latest runner
+        Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/145.0.7632.76/win64/chromedriver-win64.zip" -OutFile "C:\chromedriver.zip"
+        
+        # Extract it
+        7z x C:\chromedriver.zip -o"C:\temp_driver" -y
+        
+        # Overwrite Katalon's bundled driver with the new one
+        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win32\chromedriver.exe" -Force
+        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win64\chromedriver.exe" -Force
+
     - name: Run Katalon Tests via CLI
       shell: powershell
       run: |
-        # Navigate to the new short path
         cd C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3
         
-        # Run Katalon. Notice we kept projectPath pointing to the github workspace where your code is
-        .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true
+        # Run Katalon. I removed autoUpdateDrivers so it doesn't try to overwrite our custom v145 driver.
+        .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config
