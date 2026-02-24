@@ -50,4 +50,27 @@ jobs:
         cd C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3
         
         # Run Katalon. I removed autoUpdateDrivers so it doesn't try to overwrite our custom v145 driver.
-        .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config
+        .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+ 
+jobs:
+  build:
+    # Switch to ubuntu-latest for native Docker support
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Run Katalon Tests via Docker
+      # Pulls the official image and mounts your repository code into the container
+      run: |
+        docker run -t --rm \
+        -v "${{ github.workspace }}:/tmp/project" \
+        katalonstudio/katalon:10.4.3 \
+        katalonc.sh -noSplash -runMode=console -projectPath="/tmp/project" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true" -orgID=1192683 -testOpsProjectId=1158058 --config
