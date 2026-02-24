@@ -8,21 +8,26 @@ on:
   workflow_dispatch:
  
 jobs:
- build:
-  runs-on: windows-latest
-  steps:
-  - name: Checkout
-    uses: actions/checkout@v4
-    
-  - name: Download Katalon Runtime Engine
-    shell: powershell
-    run: |
-      # Downloads KRE directly
-      Invoke-WebRequest -Uri "https://download.katalon.com/10.4.3/Katalon_Studio_Engine_Windows_64-10.4.3.zip" -OutFile "KRE.zip"
-      Expand-Archive -Path "KRE.zip" -DestinationPath "Katalon_Engine"
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
       
-  - name: Run Katalon Tests via CLI
-    shell: powershell
-    run: |
-      cd Katalon_Engine\Katalon_Studio_Engine_Windows_64-10.4.3
-      .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true
+    - name: Download Katalon Runtime Engine
+      shell: powershell
+      run: |
+        # Disable the progress bar to speed up the download significantly
+        $ProgressPreference = 'SilentlyContinue'
+        
+        # Download KRE directly
+        Invoke-WebRequest -Uri "https://download.katalon.com/10.4.3/Katalon_Studio_Engine_Windows_64-10.4.3.zip" -OutFile "KRE.zip"
+        
+        # Use 7-Zip (pre-installed on windows runners) to extract it much faster than Expand-Archive
+        7z x KRE.zip -o"Katalon_Engine" -y
+        
+    - name: Run Katalon Tests via CLI
+      shell: powershell
+      run: |
+        cd Katalon_Engine\Katalon_Studio_Engine_Windows_64-10.4.3
+        .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true
