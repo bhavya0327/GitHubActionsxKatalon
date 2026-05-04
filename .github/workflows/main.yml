@@ -72,16 +72,19 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          # 1. Read the installed Chrome version
+          # 1. Read the installed Chrome version (from file metadata, not by launching Chrome —
+          #    launching can fail in CI due to sandbox restrictions on non-standard install paths)
           if (-not $env:CHROME_BIN -or -not (Test-Path $env:CHROME_BIN)) {
             throw "CHROME_BIN is not set or does not exist: '$env:CHROME_BIN'"
           }
-          $versionOutput = & $env:CHROME_BIN --version
-          Write-Host "Chrome reports: $versionOutput"
+          $chromeFullVersion = (Get-Item $env:CHROME_BIN).VersionInfo.ProductVersion
+          if (-not $chromeFullVersion) {
+            $chromeFullVersion = (Get-Item $env:CHROME_BIN).VersionInfo.FileVersion
+          }
+          Write-Host "Chrome file metadata reports version: $chromeFullVersion"
 
-          # Parse out the version number (e.g. "Google Chrome 145.0.7632.76" -> "145.0.7632.76")
-          if ($versionOutput -notmatch '(\d+\.\d+\.\d+\.\d+)') {
-            throw "Could not parse Chrome version from: $versionOutput"
+          if ($chromeFullVersion -notmatch '(\d+\.\d+\.\d+\.\d+)') {
+            throw "Could not parse a 4-part Chrome version from metadata: '$chromeFullVersion'"
           }
           $chromeFullVersion = $matches[1]
           $chromeMajor = $chromeFullVersion.Split('.')[0]
