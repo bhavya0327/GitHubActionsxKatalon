@@ -1,76 +1,119 @@
-name: CI
+name: repro-katalon
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
- 
+
 jobs:
   build:
     runs-on: windows-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Download Katalon Runtime Engine
-      shell: powershell
-      run: |
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "https://download.katalon.com/10.4.3/Katalon_Studio_Engine_Windows_64-10.4.3.zip" -OutFile "C:\KRE.zip"
-        7z x C:\KRE.zip -o"C:\KRE" -y
-        
-    - name: Download matching ChromeDriver
-      shell: powershell
-      run: |
-        $ProgressPreference = 'SilentlyContinue'
-        
-        # Download the exact v145 ChromeDriver required by the windows-latest runner
-        Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/145.0.7632.76/win64/chromedriver-win64.zip" -OutFile "C:\chromedriver.zip"
-        
-        # Extract it
-        7z x C:\chromedriver.zip -o"C:\temp_driver" -y
-        
-        # Define destination paths
-        $driverPath32 = "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win32"
-        $driverPath64 = "C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3\configuration\resources\drivers\chromedriver_win64"
-        
-        # Ensure the destination folders actually exist before copying
-        New-Item -ItemType Directory -Force -Path $driverPath32
-        New-Item -ItemType Directory -Force -Path $driverPath64
-        
-        # Overwrite Katalon's bundled driver with the new one
-        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "$driverPath32\chromedriver.exe" -Force
-        Copy-Item -Path "C:\temp_driver\chromedriver-win64\chromedriver.exe" -Destination "$driverPath64\chromedriver.exe" -Force
 
-    - name: Run Katalon Tests via CLI
-      shell: powershell
-      run: |
-        cd C:\KRE\Katalon_Studio_Engine_Windows_64-10.4.3
-        
-        # Run Katalon. I removed autoUpdateDrivers so it doesn't try to overwrite our custom v145 driver.
-        .\katalonc.exe -noSplash -runMode=console -projectPath="${{ github.workspace }}" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="name: CI
+    env:
+      KATALON_VERSION: 10.4.3
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-  workflow_dispatch:
- 
-jobs:
-  build:
-    # Switch to ubuntu-latest for native Docker support
-    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Run Katalon Tests via Docker
-      # Pulls the official image and mounts your repository code into the container
-      run: |
-        docker run -t --rm \
-        -v "${{ github.workspace }}:/tmp/project" \
-        katalonstudio/katalon:10.4.3 \
-        katalonc.sh -noSplash -runMode=console -projectPath="/tmp/project" -retry=2 -testSuitePath="Test Suites/ts01" -browserType="Chrome" -executionProfile="default" -apiKey="d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485" -orgID=1192683 -testOpsProjectId=1158058 --config -webui.autoUpdateDrivers=true" -orgID=1192683 -testOpsProjectId=1158058 --config
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Java and Chrome (no admin)
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\tools" | Out-Null
+
+          if (Get-Command java -ErrorAction SilentlyContinue) {
+            Write-Host "Using system Java:"
+            java -version
+          } else {
+            Write-Host "Installing portable Java 11"
+            $jreZip = "$env:TEMP\jre11.zip"
+            Invoke-WebRequest -Uri "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.26%2B4/OpenJDK11U-jdk_x64_windows_hotspot_11.0.26_4.zip" -OutFile $jreZip
+            $jreDir = "$env:USERPROFILE\tools\jre11"
+            New-Item -ItemType Directory -Force -Path $jreDir | Out-Null
+            Expand-Archive -Path $jreZip -DestinationPath $jreDir -Force
+            $inner = Get-ChildItem -Path $jreDir -Directory | Select-Object -First 1
+            Add-Content -Path $env:GITHUB_PATH -Value "$($inner.FullName)\bin"
+            $env:Path = "$($inner.FullName)\bin;$env:Path"
+            java -version
+          }
+
+          $chromeCmd = Get-Command chrome -ErrorAction SilentlyContinue
+          if (-not $chromeCmd) { $chromeCmd = Get-Command chrome.exe -ErrorAction SilentlyContinue }
+          if ($chromeCmd) {
+            Write-Host "Using system Chrome:"
+            & $chromeCmd.Source --version
+          } else {
+            Write-Host "Installing portable Chrome"
+            $chromeZip = "$env:TEMP\chrome-win64.zip"
+            Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/145.0.7632.76/win64/chrome-win64.zip" -OutFile $chromeZip
+            $chromeRoot = "$env:USERPROFILE\tools\chrome"
+            New-Item -ItemType Directory -Force -Path $chromeRoot | Out-Null
+            Expand-Archive -Path $chromeZip -DestinationPath $chromeRoot -Force
+            $chromeDir = Get-ChildItem -Path $chromeRoot -Directory | Select-Object -First 1
+            Add-Content -Path $env:GITHUB_PATH -Value $chromeDir.FullName
+            Add-Content -Path $env:GITHUB_ENV -Value "CHROME_BIN=$($chromeDir.FullName)\chrome.exe"
+            $env:Path = "$($chromeDir.FullName);$env:Path"
+            & "$($chromeDir.FullName)\chrome.exe" --version
+          }
+
+      - name: Download Katalon Runtime Engine
+        run: |
+          $ErrorActionPreference = "Stop"
+          $kreZip = "$env:TEMP\kre.zip"
+          $kreRoot = "$env:USERPROFILE\kre"
+          New-Item -ItemType Directory -Force -Path $kreRoot | Out-Null
+          Invoke-WebRequest -Uri "https://download.katalon.com/$env:KATALON_VERSION/Katalon_Studio_Engine_Windows_64-$env:KATALON_VERSION.zip" -OutFile $kreZip
+          Expand-Archive -Path $kreZip -DestinationPath $kreRoot -Force
+
+      - name: Debug project path (temporary)
+        run: |
+          $ErrorActionPreference = "Continue"
+          Write-Host "GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE"
+          Write-Host "PWD=$((Get-Location).Path)"
+          Write-Host "Project path target: /tmp/project"
+          if (Test-Path "/tmp/project") {
+            Write-Host "Contents of /tmp/project:"
+            Get-ChildItem -Path "/tmp/project" -Force | Select-Object Mode, Name, FullName
+          } else {
+            Write-Host "/tmp/project does not exist yet."
+          }
+
+      - name: Execute Katalon Studio project
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $kreDir = "$env:USERPROFILE\kre\Katalon_Studio_Engine_Windows_64-$env:KATALON_VERSION"
+          $katalonc = Join-Path $kreDir "katalonc.exe"
+          if (!(Test-Path $katalonc)) {
+            throw "katalonc.exe not found at $katalonc"
+          }
+
+          $args = @(
+            "-noSplash"
+            "-runMode=console"
+            "-projectPath=/tmp/project"
+            "-retry=2"
+            "-testSuitePath=Test Suites/ts01"
+            "-browserType=Chrome"
+            "-executionProfile=default"
+            "-apiKey=d1e929ac-be0f-4cec-a5fc-f9fd6d7c8485"
+            "-orgID=1192683"
+            "-testOpsProjectId=1158058"
+            "--config"
+            "-webui.autoUpdateDrivers=true"
+          )
+
+          & $katalonc $args
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          $ErrorActionPreference = "Continue"
+          $logFiles = Get-ChildItem -Path "$env:USERPROFILE\kre" -Filter *.log -Recurse -File
+          foreach ($f in $logFiles) {
+            Write-Host "===== $($f.FullName) ====="
+            Get-Content -Path $f.FullName -Tail 100
+          }
