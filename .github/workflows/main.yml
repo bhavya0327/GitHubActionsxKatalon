@@ -44,6 +44,7 @@ jobs:
           if ($chromeCmd) {
             Write-Host "Using system Chrome:"
             & $chromeCmd.Source --version
+            Add-Content -Path $env:GITHUB_ENV -Value "CHROME_BIN=$($chromeCmd.Source)"
           } else {
             Write-Host "Installing portable Chrome"
             $chromeZip = "$env:TEMP\chrome-win64.zip"
@@ -67,18 +68,89 @@ jobs:
           Invoke-WebRequest -Uri "https://download.katalon.com/$env:KATALON_VERSION/Katalon_Studio_Engine_Windows_64-$env:KATALON_VERSION.zip" -OutFile $kreZip
           Expand-Archive -Path $kreZip -DestinationPath $kreRoot -Force
 
-      - name: Debug project path (temporary)
+      - name: Install matching ChromeDriver
         run: |
-          $ErrorActionPreference = "Continue"
-          Write-Host "GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE"
-          Write-Host "PWD=$((Get-Location).Path)"
-          Write-Host "Project path target: /tmp/project"
-          if (Test-Path "/tmp/project") {
-            Write-Host "Contents of /tmp/project:"
-            Get-ChildItem -Path "/tmp/project" -Force | Select-Object Mode, Name, FullName
-          } else {
-            Write-Host "/tmp/project does not exist yet."
+          $ErrorActionPreference = "Stop"
+
+          # 1. Read the installed Chrome version
+          if (-not $env:CHROME_BIN -or -not (Test-Path $env:CHROME_BIN)) {
+            throw "CHROME_BIN is not set or does not exist: '$env:CHROME_BIN'"
           }
+          $versionOutput = & $env:CHROME_BIN --version
+          Write-Host "Chrome reports: $versionOutput"
+
+          # Parse out the version number (e.g. "Google Chrome 145.0.7632.76" -> "145.0.7632.76")
+          if ($versionOutput -notmatch '(\d+\.\d+\.\d+\.\d+)') {
+            throw "Could not parse Chrome version from: $versionOutput"
+          }
+          $chromeFullVersion = $matches[1]
+          $chromeMajor = $chromeFullVersion.Split('.')[0]
+          Write-Host "Chrome full version: $chromeFullVersion"
+          Write-Host "Chrome major version: $chromeMajor"
+
+          # 2. Ask Chrome for Testing for the latest matching ChromeDriver in that major version
+          $cftApi = "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json"
+          Write-Host "Fetching CfT catalog from $cftApi"
+          $catalog = Invoke-RestMethod -Uri $cftApi
+
+          # The catalog is keyed by build (major.minor.build), e.g. "145.0.7632".
+          # Find the entry that matches our major version, picking the highest build available.
+          $candidates = $catalog.builds.PSObject.Properties |
+            Where-Object { $_.Name -like "$chromeMajor.*" } |
+            Sort-Object -Property { [version]$_.Name } -Descending
+
+          if (-not $candidates) {
+            throw "No Chrome for Testing builds found for major version $chromeMajor"
+          }
+
+          $matchedBuild = $candidates | Select-Object -First 1
+          $matchedFullVersion = $matchedBuild.Value.version
+          $driverDownloads = $matchedBuild.Value.downloads.chromedriver
+          if (-not $driverDownloads) {
+            throw "No chromedriver downloads listed for build $($matchedBuild.Name)"
+          }
+          $driverUrl = ($driverDownloads | Where-Object { $_.platform -eq "win64" }).url
+          if (-not $driverUrl) {
+            throw "No win64 chromedriver download for build $($matchedBuild.Name)"
+          }
+
+          Write-Host "Matched build: $matchedFullVersion (major $chromeMajor)"
+          Write-Host "ChromeDriver URL: $driverUrl"
+
+          # 3. Download and place into KRE's webdriver folder
+          $driverZip = "$env:TEMP\chromedriver-win64.zip"
+          Invoke-WebRequest -Uri $driverUrl -OutFile $driverZip
+          $extractDir = "$env:TEMP\chromedriver-extract"
+          if (Test-Path $extractDir) { Remove-Item -Recurse -Force $extractDir }
+          Expand-Archive -Path $driverZip -DestinationPath $extractDir -Force
+
+          $kreDriverDir = "$env:USERPROFILE\kre\Katalon_Studio_Engine_Windows_64-$env:KATALON_VERSION\configuration\resources\drivers\chromedriver_win32"
+          if (-not (Test-Path $kreDriverDir)) {
+            New-Item -ItemType Directory -Force -Path $kreDriverDir | Out-Null
+          }
+          Copy-Item -Path "$extractDir\chromedriver-win64\chromedriver.exe" -Destination "$kreDriverDir\chromedriver.exe" -Force
+
+          Write-Host "Installed ChromeDriver:"
+          & "$kreDriverDir\chromedriver.exe" --version
+
+      - name: Locate Katalon project in repo
+        run: |
+          $ErrorActionPreference = "Stop"
+          Write-Host "GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE"
+
+          $prjFiles = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.prj" -File -ErrorAction SilentlyContinue
+          if (-not $prjFiles) {
+            throw "No .prj file found anywhere under $env:GITHUB_WORKSPACE. Commit a Katalon project to this repo before running."
+          }
+
+          $prj = $prjFiles | Select-Object -First 1
+          Write-Host "Using project file: $($prj.FullName)"
+          if ($prjFiles.Count -gt 1) {
+            Write-Host "Note: multiple .prj files found, using the first. All:"
+            $prjFiles | Select-Object -ExpandProperty FullName | ForEach-Object { Write-Host "  $_" }
+          }
+
+          Add-Content -Path $env:GITHUB_ENV -Value "KATALON_PROJECT_PATH=$($prj.FullName)"
 
       - name: Execute Katalon Studio project
         run: |
@@ -90,10 +162,14 @@ jobs:
             throw "katalonc.exe not found at $katalonc"
           }
 
+          if (-not $env:KATALON_PROJECT_PATH) {
+            throw "KATALON_PROJECT_PATH not set — the 'Locate Katalon project' step did not run successfully."
+          }
+
           $args = @(
             "-noSplash"
             "-runMode=console"
-            "-projectPath=/tmp/project"
+            "-projectPath=$env:KATALON_PROJECT_PATH"
             "-retry=2"
             "-testSuitePath=Test Suites/ts01"
             "-browserType=Chrome"
@@ -102,7 +178,7 @@ jobs:
             "-orgID=1192683"
             "-testOpsProjectId=1158058"
             "--config"
-            "-webui.autoUpdateDrivers=true"
+            "-webui.autoUpdateDrivers=false"
           )
 
           & $katalonc $args
