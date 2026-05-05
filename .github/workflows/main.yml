@@ -39,14 +39,34 @@ jobs:
             java -version
           }
 
-          $chromeCmd = Get-Command chrome -ErrorAction SilentlyContinue
-          if (-not $chromeCmd) { $chromeCmd = Get-Command chrome.exe -ErrorAction SilentlyContinue }
+          # Detect Chrome — check PATH first, then standard Windows install paths,
+          # then fall back to installing portable Chrome.
+          $chromeBin = $null
+
+          $chromeCmd = Get-Command chrome.exe -ErrorAction SilentlyContinue
+          if (-not $chromeCmd) { $chromeCmd = Get-Command chrome -ErrorAction SilentlyContinue }
           if ($chromeCmd) {
-            Write-Host "Using system Chrome:"
-            & $chromeCmd.Source --version
-            Add-Content -Path $env:GITHUB_ENV -Value "CHROME_BIN=$($chromeCmd.Source)"
-          } else {
-            Write-Host "Installing portable Chrome"
+            $chromeBin = $chromeCmd.Source
+            Write-Host "Found Chrome on PATH: $chromeBin"
+          }
+
+          if (-not $chromeBin) {
+            $standardPaths = @(
+              "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+              "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+              "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+            )
+            foreach ($p in $standardPaths) {
+              if ($p -and (Test-Path $p)) {
+                $chromeBin = $p
+                Write-Host "Found system Chrome at: $chromeBin"
+                break
+              }
+            }
+          }
+
+          if (-not $chromeBin) {
+            Write-Host "No system Chrome found — installing portable Chrome 145"
             $chromeZip = "$env:TEMP\chrome-win64.zip"
             Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/145.0.7632.76/win64/chrome-win64.zip" -OutFile $chromeZip
             $chromeRoot = "$env:USERPROFILE\tools\chrome"
@@ -54,10 +74,15 @@ jobs:
             Expand-Archive -Path $chromeZip -DestinationPath $chromeRoot -Force
             $chromeDir = Get-ChildItem -Path $chromeRoot -Directory | Select-Object -First 1
             Add-Content -Path $env:GITHUB_PATH -Value $chromeDir.FullName
-            Add-Content -Path $env:GITHUB_ENV -Value "CHROME_BIN=$($chromeDir.FullName)\chrome.exe"
             $env:Path = "$($chromeDir.FullName);$env:Path"
-            & "$($chromeDir.FullName)\chrome.exe" --version
+            $chromeBin = "$($chromeDir.FullName)\chrome.exe"
           }
+
+          # Report version (from file metadata, not by launching Chrome)
+          $reportedVersion = (Get-Item $chromeBin).VersionInfo.ProductVersion
+          Write-Host "Chrome binary: $chromeBin"
+          Write-Host "Chrome version: $reportedVersion"
+          Add-Content -Path $env:GITHUB_ENV -Value "CHROME_BIN=$chromeBin"
 
       - name: Download Katalon Runtime Engine
         run: |
